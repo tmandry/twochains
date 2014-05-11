@@ -25,9 +25,9 @@ class Split(Partition):
   def __len__(self):
     return len(self.parent)
 
-  def all_parts(self):
+  def parts(self):
     # TODO cache result
-    parts = self.parent.all_parts()[:]
+    parts = self.parent.parts()[:]
     parts[parts.index(self.before)] = self.left
     parts.append(self.right)
     return parts
@@ -52,7 +52,7 @@ class Chain(list):
       parent = partitions[-1]
 
       # Choose a random part to split
-      before = random.choice([part for part in parent.all_parts() if len(part) > 1])
+      before = random.choice([part for part in parent.parts() if len(part) > 1])
       before_list = list(before)
 
       # Split it randomly
@@ -183,7 +183,8 @@ def random_chain_paths():
       p = ChainPath(c1, c2)
       p.find()
       # p.print_results()
-      print "Found path of length %d, we know we can do it in at most %d" % (len(list(p.path())), c1.min_dist_lb())
+      print "Found path of length %d, we know we can do it in at most %d" %
+            (len(list(p.path())), c1.min_dist_lb())
       print
 
 if __name__ == "__main__": random_chain_paths()

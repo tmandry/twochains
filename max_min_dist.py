@@ -9,27 +9,27 @@ class ExplicitPartition(Partition):
 
   def __init__(self, parts, depth, num_elements):
     """Creates a partition from a set of sets."""
-    self.parts = parts
+    self.__parts = parts
     self.depth = depth
     self.num_elements = num_elements
 
   def __len__(self):
     return self.num_elements
 
-  def all_parts(self):
-    return self.parts
+  def parts(self):
+    return self.__parts
 
   # Returns whether a and b are split in this partition.
   def are_split(self, a, b):
     # Get first part that contains a or b
-    part = next(part for part in self.parts if a in part or b in part)
+    part = next(part for part in self.__parts if a in part or b in part)
     if a in part and b in part: return False
     return True
 
   def all_splits(self):
     """Returns a generator for all possible single splits of this partiton."""
-    for part in self.parts:
-      parts = self.parts[:]
+    for part in self.__parts:
+      parts = self.__parts[:]
       parts.remove(part)
       for split in self.__part_splits(part):
         new_parts = parts[:]

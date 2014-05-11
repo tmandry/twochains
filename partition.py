@@ -8,7 +8,7 @@ class Partition(object):
   def __str__(self):
     """Convert a partition to a string, representing it as it is in the paper."""
     # Sort parts of partition so that any two partitions can be visually compared more easily.
-    parts = sorted(list(part) for part in self.all_parts())
+    parts = sorted(list(part) for part in self.parts())
 
     separator = '.' if len(self) >= 10 else ''
     # The numbers in the parts are already sorted by the underlying set.
@@ -17,29 +17,29 @@ class Partition(object):
     return self.__str__()
 
   def __eq__(self, other):
-    return frozenset(self.all_parts()) == frozenset(other.all_parts())
+    return frozenset(self.parts()) == frozenset(other.parts())
   def __ne__(self, other):
-    return frozenset(self.all_parts()) != frozenset(other.all_parts())
+    return frozenset(self.parts()) != frozenset(other.parts())
 
   def __len__(self):
     """Returns the number of elements in the underlying set, not the number of parts."""
     raise NotImplementedError
 
-  def all_parts(self):
+  def parts(self):
     raise NotImplementedError
 
 class TrivialPartition(Partition):
   """A partition that contains only one part with all the elements, the integers from 1 to n."""
 
   def __init__(self, n):
-    self.n = n
-    self.parts = [frozenset(range(1, n+1))]
+    self.__n = n
+    self.__parts = [frozenset(range(1, n+1))]
 
   def __len__(self):
-    return self.n
+    return self.__n
 
-  def all_parts(self):
-    return self.parts
+  def parts(self):
+    return self.__parts
 
   def splits(self, i, j):
     return False

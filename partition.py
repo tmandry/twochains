@@ -28,6 +28,10 @@ class Partition(object):
   def parts(self):
     raise NotImplementedError
 
+  def splits(self):
+    """Returns whether a given partition is the one that splits i and j in a chain."""
+    raise NotImplementedError
+
 class TrivialPartition(Partition):
   """A partition that contains only one part with all the elements, the integers from 1 to n."""
 

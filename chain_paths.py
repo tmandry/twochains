@@ -33,9 +33,11 @@ class Split(Partition):
     return parts
 
   def involves(self, num):
+    """Returns whether num is involved in this split."""
     return num in self.before
 
   def splits(self, i, j):
+    """Returns whether i and j are split apart in this split."""
     return (i in self.left and j in self.right) or (j in self.left and i in self.right)
 
 class Chain(list):
@@ -64,13 +66,14 @@ class Chain(list):
 
     return cls(partitions)
 
+  @staticmethod
+  def min_dist_lb(n):
+    return (n-2)*(n-1)/2
+
   def __str__(self):
     return ' -> '.join(str(p) for p in self)
   def __repr__(self):
     return self.__str__()
-
-  def min_dist_lb(self):
-    return (len(self)-2)*(len(self)-1)/2
 
   # Returns the 0-based depth at which a and b first split.
   def split_depth(self, i, j):
@@ -118,29 +121,6 @@ class ChainPath:
     self.path1 = [chain1]
     self.path2 = [chain2]
 
-  def find(self):
-    """Actually runs the algorithm. Returns the resulting path as a list."""
-    n = len(self.chain1)
-    self.picked = set()
-
-    for d in xrange(n-1, -1, -1):
-      try:
-        i, j = self.__next_i_j(d)
-      except ValueError:
-        # Not finding anything means we are done.
-        # print("Nothing left to push down, skipping depth %d" % d)
-        break
-      self.picked.add((i, j))
-      # print("Pushing (%d,%d) split down to depth %d from depths (%d, %d)"
-      #       % (i,j,d, self.path1[-1].split_depth(i,j), self.path2[-1].split_depth(i,j)))
-
-      self.__push_down(self.path1, d, i, j)
-      self.__push_down(self.path2, d, i, j)
-
-    # Check that the paths do converge (they will as long as the algorithm is correct) and return.
-    assert self.path1[-1] == self.path2[-1]
-    return self.path()
-
   def path(self):
     """Returns the path found by find(), which must be called before this method."""
     return itertools.chain(self.path1, reversed(self.path2[:-1]))
@@ -151,6 +131,29 @@ class ChainPath:
       # Flag the common point where both paths merged; useful for examining results.
       flag = ' *' if c == self.path1[-1] else ''
       print '%s%s' % (c, flag)
+
+  def find(self):
+    """Actually runs the algorithm. Returns the resulting path as a list."""
+    n = len(self.chain1)
+    self.picked = set()
+
+    for d in xrange(n-1, -1, -1):
+      try:
+        i, j = self.__next_i_j(d)
+      except ValueError:
+        # Not finding anything means we are done.
+        break
+
+      self.picked.add((i, j))
+      self.__push_down(self.path1, d, i, j)
+      self.__push_down(self.path2, d, i, j)
+
+      # print("Pushing (%d,%d) split down to depth %d from depths (%d, %d)"
+      #       % (i,j,d, self.path1[-1].split_depth(i,j), self.path2[-1].split_depth(i,j)))
+
+    # Check that the paths do converge (they will as long as the algorithm is correct) and return.
+    assert self.path1[-1] == self.path2[-1]
+    return self.path()
 
   def __next_i_j(self, d):
     n = len(self.chain1)
@@ -180,11 +183,13 @@ def random_chain_paths():
       print "n = %d" % n
       c1, c2 = Chain.random(n), Chain.random(n)
       print "Going from\n%s to\n%s" % (c1, c2)
+
       p = ChainPath(c1, c2)
       p.find()
       # p.print_results()
-      print "Found path of length %d, we know we can do it in at most %d" %
-            (len(list(p.path())), c1.min_dist_lb())
+
+      print("Found path of length %d, we know we can do it in at most %d"
+            % (len(list(p.path())), Chain.min_dist_lb(n)))
       print
 
 if __name__ == "__main__": random_chain_paths()

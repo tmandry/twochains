@@ -1,3 +1,4 @@
+import argparse
 from itertools import chain, combinations
 from partition import Partition, TrivialPartition
 import numpy
@@ -63,39 +64,47 @@ def __chains(partition):
 def compute_max_min_dist():
   """Main script to compute the maximum minimum distance between all chains of length n."""
 
+  # Setup
+
   numpy.set_printoptions(linewidth = 100)
 
-  p = ExplicitPartition.from_list(range(1, 4+1))
-  print p
-  print list(p.all_splits())
+  parser = argparse.ArgumentParser()
+  parser.add_argument("-n", type=int, help="size of partitions (and chains) to use", default=4)
+  args = parser.parse_args()
 
+  # Analysis
+
+  p = ExplicitPartition.from_list(range(1, args.n + 1))
   all_chains = list(chains(p))
+
+  print p
+  for split in p.all_splits(): print split
   print '\n'.join([str(c) for c in chains(p)])
   print "%d chains" % len(all_chains)
 
+  # Populate adjacency matrix.
   m = len(all_chains)
   matrix = numpy.matrix(numpy.zeros(shape=(m,m)))
-
   for i in range(m):
     for j in range(m):
       if i == j:
         matrix[i,j] = 1
-        continue
-      diffs = sum(x != y for (x, y) in zip(all_chains[i], all_chains[j]))
-      if diffs < 2: matrix[i,j] = 1
+      else:
+        num_diffs = sum(x != y for (x, y) in zip(all_chains[i], all_chains[j]))
+        if num_diffs < 2:
+          matrix[i,j] = 1
 
   print matrix
 
+  # Raise power of matrix until no entries are zero.
   base_matrix = matrix.copy()
   max_dist = 1
-
   while numpy.isclose(matrix, 0).any():
     matrix = matrix * base_matrix
     max_dist += 1
 
   print matrix
-  print matrix.max()
   print
-  print max_dist
+  print "Maximal minimum distance between two chains is %d" % max_dist
 
 if __name__ == "__main__": compute_max_min_dist()

@@ -1,3 +1,5 @@
+import argparse
+import csv
 import itertools
 from partition import Partition, TrivialPartition
 import random
@@ -66,6 +68,22 @@ class Chain(list):
 
     return cls(partitions)
 
+  @classmethod
+  def from_string(cls, s):
+    raw_partitions = [p.split('|') for p in s.split(' -> ')]
+    raw_partitions = [frozenset([frozenset([int(n) for n in part.split('.')]) for part in p]) for p in raw_partitions]
+
+    n = len(list(raw_partitions[0])[0])
+    partitions = [TrivialPartition(n)]
+    for idx in range(1, n):
+      before = list(raw_partitions[idx-1] - raw_partitions[idx])[0]
+      left, right = list(raw_partitions[idx] - raw_partitions[idx-1])
+      partitions.append(Split(partitions[idx-1], before, left, right))
+
+    c = cls(partitions)
+    assert repr(c) == s
+    return c
+
   @staticmethod
   def min_dist_lb(n):
     return (n-2)*(n-1)/2
@@ -73,7 +91,7 @@ class Chain(list):
   def __str__(self):
     return ' -> '.join(str(p) for p in self)
   def __repr__(self):
-    return self.__str__()
+    return ' -> '.join(repr(p) for p in self)
 
   # Returns the 0-based depth at which a and b first split.
   def split_depth(self, i, j):
@@ -192,4 +210,37 @@ def random_chain_paths():
             % (len(list(p.path())), Chain.min_dist_lb(n)))
       print
 
-if __name__ == "__main__": random_chain_paths()
+def compare_path_lengths(lengths_file):
+  diffs = [0] * 10
+
+  with open(lengths_file, 'rb') as f:
+    reader = csv.reader(f)
+    for row in reader:
+      chain1 = Chain.from_string(row[0])
+      chain2 = Chain.from_string(row[1])
+      optimal_length = int(float(row[2]))
+      found_length = len(list(ChainPath(chain1, chain2).find())) - 1
+
+      assert optimal_length <= found_length
+      diffs[found_length - optimal_length] += 1
+
+      print "%s to \n%s\n%d path found, optimal length %d" % (chain1, chain2, found_length, optimal_length)
+
+  print
+  for diff, count in enumerate(diffs):
+    print "%d: %5d" % (diff, count)
+
+def main():
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--from-file", help="read chains from file and compare with optimal lengths",
+                      action="store_true")
+  parser.add_argument("--lengths-file", help="location to read chains and lengths",
+                      default="lengths.csv")
+  args = parser.parse_args()
+
+  if args.from_file:
+    compare_path_lengths(args.lengths_file)
+  else:
+    random_chain_paths()
+
+if __name__ == "__main__": main()

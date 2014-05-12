@@ -1,4 +1,5 @@
 import argparse
+import csv
 from itertools import chain, combinations
 from partition import Partition, TrivialPartition
 import numpy
@@ -6,6 +7,7 @@ import numpy
 class ExplicitPartition(Partition):
   @classmethod
   def from_list(cls, numbers):
+    """Creates a trivial partition with a list of any elements."""
     return cls([frozenset(numbers)], 1, len(numbers))
 
   def __init__(self, parts, depth, num_elements):
@@ -70,6 +72,10 @@ def compute_max_min_dist():
 
   parser = argparse.ArgumentParser()
   parser.add_argument("-n", type=int, help="size of partitions (and chains) to use", default=4)
+  parser.add_argument("--write-lengths", help="write lengths of each optimal path to a file",
+                      action="store_true")
+  parser.add_argument("--lengths-file", help="location to write lengths",
+                      default="lengths.csv")
   args = parser.parse_args()
 
   # Analysis
@@ -96,15 +102,39 @@ def compute_max_min_dist():
 
   print matrix
 
+  if args.write_lengths:
+    # Lengths holds the length, not including the first hop, of the optimal path between
+    # any two chains i and j.
+    lengths = numpy.matrix(numpy.zeros(shape=(m,m)))
+
   # Raise power of matrix until no entries are zero.
   base_matrix = matrix.copy()
   max_dist = 1
-  while numpy.isclose(matrix, 0).any():
+  remaining_zeros = numpy.isclose(matrix, 0)
+  while remaining_zeros.any():
+    if args.write_lengths:
+      for i in range(m):
+        for j in range(i, m):
+          if remaining_zeros[i,j]:
+            lengths[i,j] += 1
+
     matrix = matrix * base_matrix
     max_dist += 1
+
+    remaining_zeros = numpy.isclose(matrix, 0)
 
   print matrix
   print
   print "Maximal minimum distance between two chains is %d" % max_dist
+
+  if args.write_lengths:
+    with open(args.lengths_file, 'wb') as f:
+      writer = csv.writer(f)
+      for i in range(m):
+        for j in range(i, m):
+          if i == j: continue
+          chain1 = ' -> '.join(repr(p) for p in all_chains[i])
+          chain2 = ' -> '.join(repr(p) for p in all_chains[j])
+          writer.writerow([chain1, chain2, int(lengths[i,j] + 1)])
 
 if __name__ == "__main__": compute_max_min_dist()

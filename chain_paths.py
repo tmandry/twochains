@@ -3,6 +3,7 @@ import csv
 import itertools
 from partition import Partition, TrivialPartition
 import random
+import sys
 
 random.seed(1234)
 
@@ -150,7 +151,7 @@ class ChainPath:
       flag = ' *' if c == self.path1[-1] else ''
       print '%s%s' % (c, flag)
 
-  def find(self):
+  def find(self, debug=False):
     """Actually runs the algorithm. Returns the resulting path as a list."""
     n = len(self.chain1)
     self.picked = set()
@@ -166,8 +167,9 @@ class ChainPath:
       self.__push_down(self.path1, d, i, j)
       self.__push_down(self.path2, d, i, j)
 
-      # print("Pushing (%d,%d) split down to depth %d from depths (%d, %d)"
-      #       % (i,j,d, self.path1[-1].split_depth(i,j), self.path2[-1].split_depth(i,j)))
+      if debug:
+        print("Pushing (%d,%d) split down to depth %d from depths (%d, %d)"
+              % (i,j,d, self.path1[-1].split_depth(i,j), self.path2[-1].split_depth(i,j)))
 
     # Check that the paths do converge (they will as long as the algorithm is correct) and return.
     assert self.path1[-1] == self.path2[-1]
@@ -224,14 +226,26 @@ def compare_path_lengths(lengths_file):
       assert optimal_length <= found_length
       diffs[found_length - optimal_length] += 1
 
-      print "%s to \n%s\n%d path found, optimal length %d" % (chain1, chain2, found_length, optimal_length)
+      print "%r to \n%r\n%d path found, optimal length %d" % (chain1, chain2, found_length, optimal_length)
 
   print
   for diff, count in enumerate(diffs):
     print "%d: %5d" % (diff, count)
 
+def solve_path(from_chain, to_chain):
+  chain1 = Chain.from_string(from_chain)
+  chain2 = Chain.from_string(to_chain)
+  cp = ChainPath(chain1, chain2)
+  cp.find(debug=True)
+  cp.print_results()
+
 def main():
   parser = argparse.ArgumentParser()
+  parser.add_argument("from_chain", help="a string representation of a chain; remember to use quotes",
+                      nargs="?")
+  parser.add_argument("to_chain", help="a string representation of a chain; remember to use quotes",
+                      nargs="?")
+  parser.add_argument("--random", help="generate and solve random problems", action="store_true")
   parser.add_argument("--from-file", help="read chains from file and compare with optimal lengths",
                       action="store_true")
   parser.add_argument("--lengths-file", help="location to read chains and lengths",
@@ -240,7 +254,14 @@ def main():
 
   if args.from_file:
     compare_path_lengths(args.lengths_file)
-  else:
+  elif args.random:
     random_chain_paths()
+  else:
+    if not args.from_chain or not args.to_chain:
+      print "Please specify chains to go from and to:"
+      print "%s '1.2.3.4 -> 1.2|3.4 -> 1|2|3.4 -> 1|2|3|4' '1.2.3.4 -> 1.3.4|2 -> 1.4|2|3 -> 1|2|3|4'"
+      sys.exit(1)
+
+    solve_path(args.from_chain, args.to_chain)
 
 if __name__ == "__main__": main()
